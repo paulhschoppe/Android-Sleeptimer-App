@@ -12,10 +12,10 @@ class TimerReceiver : BroadcastReceiver() {
     companion object {
         const val ACTION_FADE = "de.paul.sleeptimer.FADE"     // 2 Min vor Ende: leiser werden
         const val ACTION_END = "de.paul.sleeptimer.END"       // kurz nach Ende: Absicherung
-        const val ACTION_EXTEND = "de.paul.sleeptimer.EXTEND" // Knopf "+10 Min"
+        const val ACTION_EXTEND = "de.paul.sleeptimer.EXTEND" // Knopf "+5 Min"
         const val ACTION_STOP = "de.paul.sleeptimer.STOP"     // Knopf "Stopp"
 
-        const val EXTEND_MILLIS = 10 * 60_000L
+        const val EXTEND_MILLIS = 5 * 60_000L
     }
 
     override fun onReceive(context: Context, intent: Intent) {

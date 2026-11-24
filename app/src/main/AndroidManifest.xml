@@ -3,7 +3,7 @@
 
     <!-- Exakter Wecker für den Timer, auch bei gesperrtem Bildschirm (ab Android 13 automatisch erteilt) -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-    <!-- Benachrichtigung mit Countdown, "+10 Min" und "Stopp" (wird beim ersten Start abgefragt) -->
+    <!-- Benachrichtigung mit Countdown, "+5 Min" und "Stopp" (wird beim ersten Start abgefragt) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Ausblenden in den letzten 2 Minuten läuft als kurzer Vordergrunddienst und hält die CPU wach -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

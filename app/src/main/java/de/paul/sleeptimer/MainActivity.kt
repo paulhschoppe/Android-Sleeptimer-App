@@ -1,6 +1,9 @@
 package de.paul.sleeptimer
 
 import android.Manifest
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -11,6 +14,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
+import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.NumberPicker
@@ -18,26 +22,31 @@ import android.widget.TextView
 import android.widget.Toast
 
 /**
- * Einziger Bildschirm: Stunden, Minuten und Sekunden (5er-Schritte) an Rädern einstellen (wie in der Samsung-Uhr) → Start → Countdown.
- * Darunter Schnellwahl-Knöpfe (10 / 15 Min). Die letzten 2 Minuten wird die Musik leiser, dann pausiert (siehe FadeService).
+ * Einziger Bildschirm: Stunden, Minuten und Sekunden (5er-Schritte) an Rädern einstellen wie in der Samsung-Uhr,
+ * darunter Schnellwahl-Knöpfe. Nach "Start" laufen die Räder in 5-Sekunden-Schritten rückwärts und zeigen die Restzeit.
+ * Die letzten 2 Minuten wird die Musik leiser, dann pausiert (siehe FadeService).
  */
 class MainActivity : Activity() {
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private lateinit var pickers: View
     private lateinit var presets: View
     private lateinit var hoursPicker: NumberPicker
     private lateinit var minutesPicker: NumberPicker
     private lateinit var secondsPicker: NumberPicker
-    private lateinit var countdown: TextView
     private lateinit var button: Button
 
-    /** Aktualisiert die Anzeige jede halbe Sekunde, solange die App sichtbar ist. */
+    /** null = noch nicht festgelegt, sonst ob die Räder gerade die Restzeit anzeigen. */
+    private var countingDown: Boolean? = null
+
+    /** Laufende Roll-Animationen je Rad. */
+    private val rolling = HashMap<NumberPicker, ValueAnimator>()
+
+    /** Aktualisiert die Anzeige mehrmals pro Sekunde, solange die App sichtbar ist. */
     private val tick = object : Runnable {
         override fun run() {
             updateUi()
-            handler.postDelayed(this, 500)
+            handler.postDelayed(this, 250)
         }
     }
 
@@ -45,13 +54,13 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         val padding = dp(24)
 
+        hoursPicker = wheel(count = 24)
+        minutesPicker = wheel(count = 60)
+        secondsPicker = wheel(count = 60 / SECONDS_STEP, step = SECONDS_STEP)
         // Zuletzt verwendete Zeit vorbelegen → beim nächsten Öffnen nur noch "Start" drücken
-        val saved = Timer.savedSeconds(this)
-        hoursPicker = wheel(count = 24, step = 1, initial = saved / 3600)
-        minutesPicker = wheel(count = 60, step = 1, initial = saved % 3600 / 60)
-        secondsPicker = wheel(count = 12, step = SECONDS_STEP, initial = saved % 60 / SECONDS_STEP)
+        setWheels(Timer.savedSeconds(this))
 
-        pickers = LinearLayout(this).apply {
+        val pickers = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             addView(labeled("Stunden", hoursPicker))
@@ -80,11 +89,6 @@ class MainActivity : Activity() {
             }
         }
 
-        countdown = TextView(this).apply {
-            textSize = 64f
-            gravity = Gravity.CENTER
-        }
-
         button = Button(this).apply {
             textSize = 22f
             setOnClickListener { onButtonClick() }
@@ -95,7 +99,6 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
             addView(pickers, wrapContent())
             addView(presets, wrapContent().apply { topMargin = dp(16) })
-            addView(countdown, wrapContent())
             addView(
                 button,
                 LinearLayout.LayoutParams(dp(200), ViewGroup.LayoutParams.WRAP_CONTENT).apply {
@@ -143,11 +146,83 @@ class MainActivity : Activity() {
         updateUi()
     }
 
+    private fun updateUi() {
+        val remaining = Timer.remainingMillis(this)
+        val running = remaining != null
+
+        if (countingDown != running) {
+            countingDown = running
+            finishRolling()
+            // Timer vorbei oder gestoppt → wieder die zuletzt gestellte Zeit zeigen
+            if (!running) setWheels(Timer.savedSeconds(this))
+            // INVISIBLE statt GONE: der Start/Stopp-Knopf bleibt an derselben Stelle
+            presets.visibility = if (running) View.INVISIBLE else View.VISIBLE
+            button.text = if (running) "Stopp" else "Start"
+        }
+
+        if (remaining != null) {
+            // Restzeit auf volle 5 Sekunden aufgerundet – das Sekunden-Rad zählt in seinen 5er-Schritten herunter
+            val seconds = ((remaining + 999) / 1000).toInt()
+            val shown = (seconds + SECONDS_STEP - 1) / SECONDS_STEP * SECONDS_STEP
+            rollTo(hoursPicker, shown / 3600)
+            rollTo(minutesPicker, shown % 3600 / 60)
+            rollTo(secondsPicker, shown % 60 / SECONDS_STEP)
+        }
+    }
+
     /** Stellt alle drei Räder auf die angegebene Dauer – egal, was vorher eingestellt war. */
     private fun setWheels(seconds: Int) {
         hoursPicker.value = seconds / 3600
         minutesPicker.value = seconds % 3600 / 60
         secondsPicker.value = seconds % 60 / SECONDS_STEP
+    }
+
+    /**
+     * Lässt das Rad auf [target] laufen. Geht es genau eine Zahl rückwärts (der Normalfall im Countdown),
+     * rollt das Rad weich nach unten wie beim Wischen; alles andere (Start, +5 Min) springt direkt.
+     */
+    private fun rollTo(picker: NumberPicker, target: Int) {
+        if (rolling.containsKey(picker)) {
+            // Vorige Animation noch nicht fertig: nur eingreifen, wenn sich das Ziel geändert hat
+            if (picker.tag == target) return
+            rolling.remove(picker)?.end()
+        }
+        if (picker.value == target) return
+
+        val count = picker.maxValue + 1
+        val oneDown = (picker.value - 1 + count) % count == target
+        if (!oneDown || picker.height == 0) {
+            picker.value = target
+            return
+        }
+
+        // Höhe einer Zeile, genau wie NumberPicker sie berechnet (3 sichtbare Zeilen)
+        val rowHeight = (picker.height / 3f + 0.5f).toInt()
+        var applied = 0
+        picker.tag = target
+        rolling[picker] = ValueAnimator.ofInt(0, rowHeight).apply {
+            duration = 400
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                val now = it.animatedValue as Int
+                picker.scrollBy(0, now - applied)   // positiv = Rad dreht nach unten, Wert wird kleiner
+                applied = now
+                picker.invalidate()
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (rolling[picker] === animation) rolling.remove(picker)
+                    if (picker.value != target) picker.value = target   // Sicherheitsnetz
+                }
+            })
+            start()
+        }
+    }
+
+    /** Alle Roll-Animationen sofort abschließen, damit die Räder sauber auf ihrer Zeile stehen. */
+    private fun finishRolling() {
+        rolling.values.toList().forEach { it.end() }
+        rolling.clear()
     }
 
     /** Für die Countdown-Benachrichtigung; fragt Android nur, solange noch nicht entschieden wurde. */
@@ -164,31 +239,20 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun updateUi() {
-        val remaining = Timer.remainingMillis(this)
-        val running = remaining != null
-
-        pickers.visibility = if (running) View.GONE else View.VISIBLE
-        presets.visibility = pickers.visibility
-        countdown.visibility = if (running) View.VISIBLE else View.GONE
-        if (remaining != null) countdown.text = format(remaining)
-
-        button.text = if (running) "Stopp" else "Start"
-    }
-
     /**
      * Drehrad zum Wischen, zweistellig und endlos umlaufend wie in der Samsung-Uhr.
      * Rad-Position i zeigt den Wert i * step (Sekunden: 00, 05, 10, …).
      */
-    private fun wheel(count: Int, step: Int, initial: Int) = NumberPicker(this).apply {
+    private fun wheel(count: Int, step: Int = 1) = NumberPicker(this).apply {
         minValue = 0
         maxValue = count - 1
         displayedValues = Array(count) { "%02d".format(it * step) }
-        value = initial.coerceIn(0, count - 1)
         wrapSelectorWheel = true
         textSize = sp(40f)
         selectionDividerHeight = 0                                     // keine Trennlinien, wie bei Samsung
         descendantFocusability = NumberPicker.FOCUS_BLOCK_DESCENDANTS  // nur wischen, keine Tastatur
+        // Während des Countdowns lassen sich die Räder nicht verstellen
+        setOnTouchListener { _, _ -> countingDown == true }
     }
 
     private fun labeled(label: String, picker: NumberPicker) = LinearLayout(this).apply {
@@ -208,16 +272,8 @@ class MainActivity : Activity() {
         setPadding(dp(2), dp(24), dp(2), 0)   // auf Höhe der Zahlen, nicht der Beschriftung
     }
 
-    private fun format(millis: Long): String {
-        val totalSeconds = (millis + 999) / 1000
-        val h = totalSeconds / 3600
-        val m = (totalSeconds % 3600) / 60
-        val s = totalSeconds % 60
-        return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
-    }
-
     private companion object {
-        /** Das Sekunden-Rad springt in 5-Sekunden-Schritten. */
+        /** Das Sekunden-Rad springt in 5-Sekunden-Schritten – beim Einstellen und beim Herunterzählen. */
         const val SECONDS_STEP = 5
 
         /** Schnellwahl-Knöpfe unter den Rädern. */

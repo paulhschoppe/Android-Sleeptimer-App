@@ -10,7 +10,7 @@ import android.graphics.drawable.Icon
 import android.text.format.DateFormat
 import java.util.Date
 
-/** Benachrichtigung mit Countdown und den Knöpfen "+10 Min" und "Stopp" – auch auf dem Sperrbildschirm. */
+/** Benachrichtigung mit Countdown und den Knöpfen "+5 Min" und "Stopp" – auch auf dem Sperrbildschirm. */
 object TimerNotification {
     private const val CHANNEL = "timer"
 
@@ -57,7 +57,7 @@ object TimerNotification {
             .setCategory(Notification.CATEGORY_STOPWATCH)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setContentIntent(openApp)
-            .addAction(action(context, "+10 Min", TimerReceiver.ACTION_EXTEND))
+            .addAction(action(context, "+5 Min", TimerReceiver.ACTION_EXTEND))
             .addAction(action(context, "Stopp", TimerReceiver.ACTION_STOP))
             .build()
     }
