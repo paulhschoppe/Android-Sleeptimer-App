@@ -11,6 +11,18 @@ Der zuletzt eingestellte Wert bleibt gespeichert, beim nächsten Öffnen reicht 
 - Timer läuft über den System-Wecker weiter, auch wenn die App geschlossen oder der Bildschirm gesperrt ist
 - Mindestversion: Android 13
 
+## App direkt installieren (ohne PC)
+
+Fertige App: [apk/Sleeptimer.apk](apk/Sleeptimer.apk) –
+Direkt-Download am Handy: <https://github.com/paulhschoppe/Android-Sleeptimer-App/raw/main/apk/Sleeptimer.apk>
+
+1. Datei am Handy öffnen (Link im Browser oder als Datei per Messenger geschickt).
+2. Android fragt, ob Browser bzw. Messenger Apps installieren darf → einmalig erlauben.
+3. **Installieren** tippen. Warnt Play Protect vor einem unbekannten Entwickler → **Trotzdem installieren**.
+
+Samsung: Falls die Installation blockiert wird, unter Einstellungen → Sicherheit und Datenschutz den **Auto Blocker** kurz ausschalten.
+Danach für einen zuverlässigen Timer: App lange drücken → App-Info → Akku → **Nicht eingeschränkt**.
+
 ## Projektstruktur
 
 ```
