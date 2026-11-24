@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "de.paul.sleeptimer"
     compileSdk = 35
+    buildToolsVersion = "35.0.0"   // dieselbe Version, die setup.ps1 installiert
 
     defaultConfig {
         applicationId = "de.paul.sleeptimer"
