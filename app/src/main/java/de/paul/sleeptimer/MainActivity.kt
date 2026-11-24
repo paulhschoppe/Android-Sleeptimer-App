@@ -1,6 +1,8 @@
 package de.paul.sleeptimer
 
+import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -17,13 +19,14 @@ import android.widget.Toast
 
 /**
  * Einziger Bildschirm: Stunden, Minuten und Sekunden (5er-Schritte) an Rädern einstellen (wie in der Samsung-Uhr) → Start → Countdown.
- * Läuft der Timer ab, pausiert die Musik (siehe TimerReceiver).
+ * Darunter Schnellwahl-Knöpfe (10 / 15 Min). Die letzten 2 Minuten wird die Musik leiser, dann pausiert (siehe FadeService).
  */
 class MainActivity : Activity() {
 
     private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var pickers: View
+    private lateinit var presets: View
     private lateinit var hoursPicker: NumberPicker
     private lateinit var minutesPicker: NumberPicker
     private lateinit var secondsPicker: NumberPicker
@@ -58,6 +61,25 @@ class MainActivity : Activity() {
             addView(labeled("Sekunden", secondsPicker))
         }
 
+        // Voreinstellungen: ein Tipp stellt alle Räder auf genau diese Zeit
+        presets = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            for (minutes in PRESET_MINUTES) {
+                addView(
+                    Button(this@MainActivity).apply {
+                        text = "$minutes Min"
+                        textSize = 16f
+                        setOnClickListener { setWheels(minutes * 60) }
+                    },
+                    LinearLayout.LayoutParams(dp(110), ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                        marginStart = dp(6)
+                        marginEnd = dp(6)
+                    }
+                )
+            }
+        }
+
         countdown = TextView(this).apply {
             textSize = 64f
             gravity = Gravity.CENTER
@@ -72,6 +94,7 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             addView(pickers, wrapContent())
+            addView(presets, wrapContent().apply { topMargin = dp(16) })
             addView(countdown, wrapContent())
             addView(
                 button,
@@ -115,8 +138,30 @@ class MainActivity : Activity() {
                 return
             }
             Timer.start(this, seconds)
+            askForNotificationPermission()
         }
         updateUi()
+    }
+
+    /** Stellt alle drei Räder auf die angegebene Dauer – egal, was vorher eingestellt war. */
+    private fun setWheels(seconds: Int) {
+        hoursPicker.value = seconds / 3600
+        minutesPicker.value = seconds % 3600 / 60
+        secondsPicker.value = seconds % 60 / SECONDS_STEP
+    }
+
+    /** Für die Countdown-Benachrichtigung; fragt Android nur, solange noch nicht entschieden wurde. */
+    private fun askForNotificationPermission() {
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        // Gerade erlaubt → Benachrichtigung für den bereits laufenden Timer nachreichen
+        if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            Timer.endMillis(this)?.let { TimerNotification.show(this, it) }
+        }
     }
 
     private fun updateUi() {
@@ -124,6 +169,7 @@ class MainActivity : Activity() {
         val running = remaining != null
 
         pickers.visibility = if (running) View.GONE else View.VISIBLE
+        presets.visibility = pickers.visibility
         countdown.visibility = if (running) View.VISIBLE else View.GONE
         if (remaining != null) countdown.text = format(remaining)
 
@@ -173,6 +219,9 @@ class MainActivity : Activity() {
     private companion object {
         /** Das Sekunden-Rad springt in 5-Sekunden-Schritten. */
         const val SECONDS_STEP = 5
+
+        /** Schnellwahl-Knöpfe unter den Rädern. */
+        val PRESET_MINUTES = intArrayOf(15, 10)
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kleines Symbol in der Statusleiste: nur die Mondsichel aus dem App-Icon -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <group
+        android:translateX="-46"
+        android:translateY="-22">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M57.64,24.24 A12,12 0 1,0 71.77,38.37 A10,10 0 0,1 57.64,24.24 Z" />
+    </group>
+</vector>

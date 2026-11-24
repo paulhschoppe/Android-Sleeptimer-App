@@ -3,6 +3,9 @@
 Minimaler Sleeptimer für Android: Stunden, Minuten und Sekunden (in 5er-Schritten) an Rädern einstellen wie in der Samsung-Uhr → **Start** → nach Ablauf pausiert die laufende Musik (Spotify, YouTube Music usw.).
 Der zuletzt eingestellte Wert bleibt gespeichert, beim nächsten Öffnen reicht ein Tipp auf **Start**.
 
+- Schnellwahl **15 Min** / **10 Min** stellt die Räder mit einem Tipp
+- Die letzten **2 Minuten** wird die Musik langsam leiser; nach der Pause wird die ursprüngliche Lautstärke wiederhergestellt
+- Benachrichtigung mit Countdown und den Knöpfen **+10 Min** und **Stopp** – auch auf dem Sperrbildschirm
 - Keine Internetverbindung, keine Bibliotheken – nur das Android-SDK
 - Timer läuft über den System-Wecker weiter, auch wenn die App geschlossen oder der Bildschirm gesperrt ist
 - Mindestversion: Android 13
@@ -12,11 +15,14 @@ Der zuletzt eingestellte Wert bleibt gespeichert, beim nächsten Öffnen reicht 
 ```
 app/src/main/
 ├── AndroidManifest.xml
+├── res/                      # App-Icon (Mond über Bett) und Symbol für die Benachrichtigung
 └── java/de/paul/sleeptimer/
-    ├── MainActivity.kt    # Bildschirm: Einstellräder, Countdown, Start/Stopp
-    ├── Timer.kt           # Timer starten/stoppen, Dauer speichern (AlarmManager + SharedPreferences)
-    ├── TimerReceiver.kt   # wird bei Ablauf aufgerufen → Musik pausieren
-    └── Media.kt           # simuliert die Pause-Medientaste
+    ├── MainActivity.kt       # Bildschirm: Einstellräder, Schnellwahl, Countdown, Start/Stopp
+    ├── Timer.kt              # Timer starten/verlängern/stoppen, Wecker setzen, Dauer speichern
+    ├── TimerReceiver.kt      # Wecker und Benachrichtigungs-Knöpfe empfangen
+    ├── FadeService.kt        # letzte 2 Minuten: leiser werden, pausieren, Lautstärke zurücksetzen
+    ├── TimerNotification.kt  # Benachrichtigung mit Countdown, +10 Min, Stopp
+    └── Media.kt              # simuliert die Pause-Medientaste
 ```
 
 ## Einmalige Einrichtung (ohne Android Studio)
