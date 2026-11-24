@@ -1,6 +1,6 @@
 # Android Sleeptimer
 
-Minimaler Sleeptimer für Android: Minuten eintippen → **Start** → nach Ablauf pausiert die laufende Musik (Spotify, YouTube Music usw.).
+Minimaler Sleeptimer für Android: Stunden, Minuten und Sekunden (in 5er-Schritten) an Rädern einstellen wie in der Samsung-Uhr → **Start** → nach Ablauf pausiert die laufende Musik (Spotify, YouTube Music usw.).
 Der zuletzt eingestellte Wert bleibt gespeichert, beim nächsten Öffnen reicht ein Tipp auf **Start**.
 
 - Keine Internetverbindung, keine Bibliotheken – nur das Android-SDK
@@ -13,8 +13,8 @@ Der zuletzt eingestellte Wert bleibt gespeichert, beim nächsten Öffnen reicht 
 app/src/main/
 ├── AndroidManifest.xml
 └── java/de/paul/sleeptimer/
-    ├── MainActivity.kt    # Bildschirm: Eingabe, Countdown, Start/Stopp
-    ├── Timer.kt           # Timer starten/stoppen, Minuten speichern (AlarmManager + SharedPreferences)
+    ├── MainActivity.kt    # Bildschirm: Einstellräder, Countdown, Start/Stopp
+    ├── Timer.kt           # Timer starten/stoppen, Dauer speichern (AlarmManager + SharedPreferences)
     ├── TimerReceiver.kt   # wird bei Ablauf aufgerufen → Musik pausieren
     └── Media.kt           # simuliert die Pause-Medientaste
 ```

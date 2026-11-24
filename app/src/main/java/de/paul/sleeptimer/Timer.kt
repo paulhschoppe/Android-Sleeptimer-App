@@ -11,8 +11,9 @@ import android.content.Intent
  */
 object Timer {
     private const val KEY_END = "end"
-    private const val KEY_MINUTES = "minutes"
-    const val DEFAULT_MINUTES = 30
+    private const val KEY_SECONDS = "seconds"
+    private const val KEY_MINUTES_OLD = "minutes"   // frühere Versionen speicherten nur Minuten
+    const val DEFAULT_SECONDS = 30 * 60
 
     private fun prefs(context: Context) =
         context.getSharedPreferences("timer", Context.MODE_PRIVATE)
@@ -25,14 +26,17 @@ object Timer {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-    /** Zuletzt eingestellte Minuten – werden beim nächsten Öffnen wieder angezeigt. */
-    fun savedMinutes(context: Context): Int =
-        prefs(context).getInt(KEY_MINUTES, DEFAULT_MINUTES)
+    /** Zuletzt eingestellte Dauer in Sekunden – wird beim nächsten Öffnen wieder angezeigt. */
+    fun savedSeconds(context: Context): Int {
+        val prefs = prefs(context)
+        return prefs.getInt(KEY_SECONDS, prefs.getInt(KEY_MINUTES_OLD, DEFAULT_SECONDS / 60) * 60)
+    }
 
-    fun start(context: Context, minutes: Int) {
-        val end = System.currentTimeMillis() + minutes * 60_000L
+    fun start(context: Context, seconds: Int) {
+        val end = System.currentTimeMillis() + seconds * 1000L
         prefs(context).edit()
-            .putInt(KEY_MINUTES, minutes)
+            .putInt(KEY_SECONDS, seconds)
+            .remove(KEY_MINUTES_OLD)
             .putLong(KEY_END, end)
             .apply()
 

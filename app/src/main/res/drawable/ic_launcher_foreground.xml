@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mondsichel mit Sternen über einem Bett -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#F2B632" android:pathData="M57.64,24.24 A12,12 0 1,0 71.77,38.37 A10,10 0 0,1 57.64,24.24 Z" />
+    <path android:fillColor="#F2B632" android:pathData="M42,29.5 L43.1,32.9 L46.5,34 L43.1,35.1 L42,38.5 L40.9,35.1 L37.5,34 L40.9,32.9 Z" />
+    <path android:fillColor="#F2B632" android:pathData="M77,42 L77.7,44.3 L80,45 L77.7,45.7 L77,48 L76.3,45.7 L74,45 L76.3,44.3 Z" />
+    <path android:fillColor="#2E3A59" android:pathData="M30,52 A2,2 0 0,1 32,50 H33 A2,2 0 0,1 35,52 V76 H30 Z" />
+    <path android:fillColor="#2E3A59" android:pathData="M35,64 H76 A2,2 0 0,1 78,66 V76 H73.5 V72 H35 Z" />
+    <path android:fillColor="#A9B8E0" android:pathData="M39,58 H43.5 A2.5,2.5 0 0,1 46,60.5 V61.5 A2.5,2.5 0 0,1 43.5,64 H39 A2.5,2.5 0 0,1 36.5,61.5 V60.5 A2.5,2.5 0 0,1 39,58 Z" />
+    <path android:fillColor="#4F6BBF" android:pathData="M47,64 V60 A4,4 0 0,1 51,56 H72 A6,6 0 0,1 78,62 V64 Z" />
+</vector>
